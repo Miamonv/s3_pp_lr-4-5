@@ -14,31 +14,49 @@ public class ConsoleView {
     public static final String ANSI_CYAN = "\u001B[36m";
 
     public void showMenu() {
-        //додати очищення консолі і потім введення нової
         //можливо розділити меню на кілька частин
         //наприклад дії окремо для іграшок, окремо для кімнати?
-        System.out.println("\n===== ІГРОВА КІМНАТА ====="); //!!!додати кольори в меню або подумати за іньерфейс
-        System.out.println("1. Додати нову іграшку");
-        System.out.println("2. Сортувати іграшки");
-        System.out.println("3. Знайти іграшки за діапазоном");
-        System.out.println("4. Зберегти кімнату у файл");
-        System.out.println("5. Завантажити кімнату з файлу");
-        System.out.println("0. Вихід");
-        System.out.print("Ваш вибір: ");
+
+        System.out.println(ANSI_YELLOW + "===== ІГРОВА КІМНАТА =====" + ANSI_RESET);
+
+        // керування кімнатою
+        System.out.println(ANSI_CYAN + "\n--- Керування Кімнатою ---" + ANSI_RESET);
+        System.out.println("1. Сформувати нову кімнату (вказати бюджет)");
+        System.out.println("2. Завантажити кімнату з файлу");
+        System.out.println("3. Зберегти поточну кімнату у файл");
+
+        // робота з іграшками
+        System.out.println(ANSI_CYAN + "\n--- Редагування Іграшок ---" + ANSI_RESET);
+        System.out.println("4. Додати нову іграшку");
+        System.out.println("5. Редагувати іграшку");
+        System.out.println("6. Видалити іграшку");
+
+        // пошук та сортування
+        System.out.println(ANSI_CYAN + "\n--- Пошук та Перегляд ---" + ANSI_RESET);
+        System.out.println("7. Показати всі іграшки в кімнаті");
+        System.out.println("8. Сортувати іграшки (за ціною, розміром, віком...)");
+        System.out.println("9. Знайти іграшки за діапазоном (ціна, вік...)");
+        System.out.println("10. Показати статистику (за групами)");
+        System.out.println("11. Показати інформацію про кімнату (бюджет, ліміти, вік)");
+
+        System.out.println(ANSI_RED + "\n0. Вихід" + ANSI_RESET);
+        System.out.print("\nВаш вибір: ");
+
     }
 
+    //для зчитування вводу користувача
     public String getUserInput() {
-        return scanner.nextLine();
+        return scanner.nextLine().trim();
     }
 
     public void showMessage(String message) {
-        System.out.println(message);
+        System.out.println(ANSI_BLUE + "-> " + message + ANSI_RESET);
+        pressEnterToContinue();
     }
 
-    public void returnToMenu() {
-        System.out.println("Повернення до головного меню...");
-        ConsoleView consoleView = new ConsoleView();
-        consoleView.showMenu();
+    public void pressEnterToContinue() {
+        System.out.println(ANSI_PURPLE + "(Натисніть Enter, щоб продовжити...)" + ANSI_RESET);
+        scanner.nextLine();
     }
 }
 
