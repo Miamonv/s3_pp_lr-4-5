@@ -1,26 +1,29 @@
 package model;
 
-import java.util.Scanner;
-
 public abstract class Toy {
-    String name;
-    double price;
-    int minAge;
-    int maxAge;
+    private String name;
+    private double price;
+    private int minAge;
+    private int maxAge;
+    private Size size;
 
-    Toy(String name, double price, int minAge, int maxAge) {
+    public Toy(String name, double price, int minAge, int maxAge, Size size) {
         this.name = name;
-        Scanner sc = new Scanner(System.in);
-        while (true){
-            if (price < 0){
-                System.out.println("Ціна не може бути від'ємною\nВведіть правильну ціну:\n");
-                sc.nextLine();
-            }
-            else break;
-        }
         this.price = price;
         this.minAge = minAge;
         this.maxAge = maxAge;
+        this.size = size;
     }
 
+    public String getName() { return name; }
+    public double getPrice() { return price; }
+    public int getMinAge() { return minAge; }
+    public int getMaxAge() { return maxAge; }
+    public Size getSize() { return size; }
+
+    @Override
+    public String toString() {
+        return String.format("Назва: %-15s | Ціна: %-7.2f | Вік: %d-%d | Розмір: %s",
+                name, price, minAge, maxAge, size);
+    }
 }
