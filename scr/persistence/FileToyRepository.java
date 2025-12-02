@@ -1,41 +1,101 @@
 package persistence;
-import model.*;
-import java.io.File;
-import java.io.FileNotFoundException;
+
+import model.GameRoom;
+import model.Toy;
+import util.ToyMapper;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class FileToyRepository {
+public class FileToyRepository implements ToyRepository {
+    private String catalogFilename;
 
-    public List<Toy> loadToys(String filename) {
-        List<Toy> loadedToys = new ArrayList<>();
-        try (Scanner sc = new Scanner(new File(filename))) {
-            while (sc.hasNextLine()) {
-                String line = sc.nextLine();
-                String[] p = line.split(",");
+    public FileToyRepository(String catalogFilename) {
+        this.catalogFilename = catalogFilename;
+    }
 
-                String type = p[0];
-                String name = p[1];
-                double price = Double.parseDouble(p[2]);
-                int minAge = Integer.parseInt(p[3]);
-                int maxAge = Integer.parseInt(p[4]);
+    @Override
+    public List<Toy> loadCatalog() {
+        List<Toy> toys = new ArrayList<>();
+        File file = new File(catalogFilename);
 
-                // Factory logic (Фабрика об'єктів)
-                switch (type) {
-                    case "Transport":
-                        int speed = Integer.parseInt(p[5]);
-                        String color = p[6];
-                        loadedToys.add(new Transport(name, price, minAge, maxAge, speed, color));
-                        break;
-                    case "Doll":
-                        // додати логіку для ляльки
-                        break;
+        if (!file.exists()) {
+            System.err.println("Файл каталогу не знайдено: " + catalogFilename);
+            return toys;
+        }
+
+        try (Scanner scanner = new Scanner(file)) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.isBlank()) continue;
+                try {
+                    Toy toy = ToyMapper.stringToToy(line);
+                    toys.add(toy);
+                } catch (Exception e) {
+                    System.err.println("Помилка парсингу рядка: " + line);
                 }
             }
         } catch (FileNotFoundException e) {
-            System.out.println("Файл не знайдено: " + filename);
+            e.printStackTrace();
         }
-        return loadedToys;
+        return toys;
+    }
+
+    @Override
+    public void saveRoom(GameRoom room, String filename) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
+            writer.println("Ім'я кімнати: " + room.getName());
+            writer.println("Бюджет: " + room.getBudgetLimit());
+            writer.println("Витрачено: " + room.getCurrentSpent());
+            writer.println("--- ІГРАШКИ В КІМНАТІ ---");
+
+            for (Toy toy : room.getToys()) {
+                writer.println(ToyMapper.toyToString(toy));
+            }
+            System.out.println("Кімнату успішно збережено у файл: " + filename);
+        } catch (IOException e) {
+            System.err.println("Помилка запису у файл: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public GameRoom loadRoom(String filename) {
+        File file = new File(filename);
+        if (!file.exists()) return null;
+
+        try (Scanner sc = new Scanner(file)) {
+
+            String nameLine = sc.nextLine();
+            String budgetLine = sc.nextLine();
+
+            String name = nameLine.split(":")[1].trim();
+            double budget = Double.parseDouble(budgetLine.split(":")[1].trim());
+
+            GameRoom room = new GameRoom(name, budget);
+
+            while (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                if (line.contains("---")) {
+                    break;
+                }
+            }
+            // читаю іграшки
+            while (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                if (line.isEmpty()) continue;
+                try {
+                    Toy toy = util.ToyMapper.stringToToy(line);
+                    room.addToy(toy);
+                } catch (Exception e) {
+                    System.out.println("Помилка: " + line);
+                }
+            }
+            return room;
+
+        } catch (Exception e) {
+            System.out.println("Помилка завантаження кімнати: " + e.getMessage());
+            return null;
+        }
     }
 }

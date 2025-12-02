@@ -1,53 +1,49 @@
 package main;
 
 import console.ConsoleView;
-import controller_menu.*; // імпорту всіх команд
+import controller_menu.*;
+import logic.GameRoomService;
+import persistence.FileToyRepository;
+import persistence.ToyRepository;
+
+import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) {
-        ConsoleView view = new ConsoleView();
+        Scanner scanner = new Scanner(System.in);
+        ConsoleView view = new ConsoleView(scanner);
         MenuController menuController = new MenuController();
 
-        // =============== Об'єкти команд ===================
-        // управління кімнатою
-        Command createRoom = new CreateRoomCommand();
-        Command loadRoom = new LoadRoomCommand();
-        Command saveRoom = new SaveRoomCommand();
+        ToyRepository repository = new FileToyRepository("toys_catalog.csv");
+        GameRoomService service = new GameRoomService(repository);
 
-        // робота з іграшками
-        Command addToy = new AddToyCommand();
-        Command editToy = new EditToyCommand();
-        Command removeToy = new RemoveToyCommand();
+        // Управління кімнатою
+        menuController.register("1", new CreateRoomCommand(service, scanner));
+        menuController.register("2", new LoadRoomCommand(service, scanner));
+        menuController.register("3", new SaveRoomCommand(service, scanner));
 
-        // аналіз та перегляд
-        Command showAllToys = new ShowAllToysCommand();
-        Command sortToys = new SortToysCommand();
-        Command findToys = new FindToysCommand();
-        Command showStats = new ShowStatsCommand();
-        Command showRoomInfo = new ShowRoomInfoCommand();
+        // Робота з іграшками
+        menuController.register("4", new AddToyCommand(service, scanner));
+        menuController.register("5", new EditToyCommand(service, scanner));
+        menuController.register("6", new RemoveToyCommand(service, scanner));
 
-        // і вихід
-        Command exit = new ExitCommand();
+        // Аналіз та перегляд
+        menuController.register("7", new ShowRoomInfoCommand(service));
 
-        // введення реєстрації команд у меню для його перевірки!!
-        menuController.register("1", createRoom);
-        menuController.register("2", loadRoom);
-        menuController.register("3", saveRoom);
-        menuController.register("4", addToy);
-        menuController.register("5", editToy);
-        menuController.register("6", removeToy);
-        menuController.register("7", showAllToys);
-        menuController.register("8", sortToys);
-        menuController.register("9", findToys);
-        menuController.register("10", showStats);
-        menuController.register("11", showRoomInfo);
-        menuController.register("0", exit);
+        // Сортування та пошук
+        menuController.register("8", new SortToysCommand(service, scanner));
+        menuController.register("9", new FindToysCommand(service, scanner));
+
+        menuController.register("10", new ShowCatalogCommand(service));
+        menuController.register("0", new ExitCommand());
 
         while (true) {
             view.showMenu();
             String userInput = view.getUserInput();
-            menuController.executeCommand(userInput); // виконання команди на основі вводу користувача
+
+            menuController.executeCommand(userInput);
+
             if (!userInput.equals("0")) {
                 view.pressEnterToContinue();
             }

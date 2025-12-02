@@ -21,9 +21,12 @@ public abstract class Toy {
     public int getMaxAge() { return maxAge; }
     public Size getSize() { return size; }
 
+    public void setName(String name) { this.name = name; }
+    public void setPrice(double price) { this.price = price; }
+
     @Override
     public String toString() {
-        return String.format("Назва: %-15s | Ціна: %-7.2f | Вік: %d-%d | Розмір: %s",
+        return String.format("Назва: %-20s | Ціна: %-8.2f грн | Вік: %d-%d | Розмір: %s",
                 name, price, minAge, maxAge, size);
     }
 }

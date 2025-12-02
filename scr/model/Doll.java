@@ -15,6 +15,6 @@ public class Doll extends Toy {
 
     @Override
     public String toString() {
-        return super.toString() + String.format(" | Тип: Лялька | Матеріал: %s | Волосся: %s", material, hairColor);
+        return super.toString() + String.format(" | Матеріал: %s | Волосся: %s", material, hairColor);
     }
 }

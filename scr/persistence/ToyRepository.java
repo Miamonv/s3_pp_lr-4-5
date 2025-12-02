@@ -1,24 +1,11 @@
 package persistence;
+
+import model.GameRoom;
 import model.Toy;
-import java.util.ArrayList;
+import java.util.List;
 
-public class ToyRepository {
-    ArrayList<Toy> toyStorage;
-
-    public ToyRepository(ArrayList<Toy> fileToyStorage) {
-        this.toyStorage = new ArrayList<>(fileToyStorage);
-    }
-
-    public void showToyRepository() {
-        for (Toy toy : toyStorage) {
-            toy.showString();
-        }
-    }
-
-    public ArrayList<Toy> getToyStorage() {
-
-        return toyStorage;
-    }
-
-
+public interface ToyRepository {
+    List<Toy> loadCatalog(); // Завантажити всі можливі іграшки магазину
+    void saveRoom(GameRoom room, String filename); // Зберегти зібрану кімнату
+    GameRoom loadRoom(String filename);     // Завантажити кімнату з файлу
 }

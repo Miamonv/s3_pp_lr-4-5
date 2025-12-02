@@ -32,6 +32,17 @@ public class GameRoom {
         return budgetLimit - currentSpent;
     }
 
+    public void decreaseSpent(double amount) {
+        this.currentSpent -= amount;
+        if (this.currentSpent < 0) {
+            this.currentSpent = 0;
+        }
+    }
+
+    public void increaseSpent(double amount) {
+        this.currentSpent += amount;
+    }
+
     @Override
     public String toString() {
         return String.format("Кімната '%s' | Бюджет: %.2f / %.2f | Іграшок: %d",

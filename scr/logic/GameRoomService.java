@@ -1,20 +1,23 @@
 package logic;
 
-import model.GameRoom;
-import model.Toy;
-import persistence.FileToyRepository;
+import model.*;
+import persistence.ToyRepository;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class GameRoomService {
     private GameRoom activeRoom;
-    private List<Toy> catalog;  //каталог всіх іграшок
+    private List<Toy> catalog;
+    private ToyRepository repository;
 
-    public GameRoomService(String filename) {
-        FileToyRepository repo = new FileToyRepository(filename);
-        this.catalog = repo.loadCatalog();
+    public GameRoomService(ToyRepository repository) {
+        this.repository = repository;
+        this.catalog = repository.loadCatalog(); // завантажуємо каталог при старті
     }
 
+    // --- Управління кімнатою ---
     public void createRoom(String name, double budget) {
         this.activeRoom = new GameRoom(name, budget);
     }
@@ -23,95 +26,134 @@ public class GameRoomService {
         return activeRoom;
     }
 
-    /**
-     * Головний метод пошуку:
-     * 1. Приймає вік дитини (для якої купуємо зараз).
-     * 2. Перевіряє, чи вистачить грошей у кімнаті.
-     */
-    public List<Toy> getToysForChild(int childAge) {
+    // логіка відбору іграшок (+ показ каталогу)
+    public List<Toy> getToysForChild(int age) {
         if (activeRoom == null) return List.of();
-
         double moneyLeft = activeRoom.getRemainingBudget();
 
         return catalog.stream()
-                //вік
-                .filter(toy -> childAge >= toy.getMinAge() && childAge <= toy.getMaxAge())
-
-                //бюджет
-                .filter(toy -> toy.getPrice() <= moneyLeft)
-
-                //вертаємо список
+                .filter(t -> age >= t.getMinAge() && age <= t.getMaxAge())
+                .filter(t -> t.getPrice() <= moneyLeft)
                 .collect(Collectors.toList());
     }
 
-    public void addToyToRoom(Toy toy) throws Exception {
-        if (activeRoom.getRemainingBudget() < toy.getPrice()) {
-            throw new Exception("Недостатньо коштів!");
-        }
+    public void addToyToRoom(Toy toy) {
         activeRoom.addToy(toy);
     }
 
-    public boolean removeToy(String toyName) {
-        // Знаходимо іграшку для видалення
-        Toy toyToRemove = gameRoom.getToys().stream()
-                .filter(t -> t.getName().equalsIgnoreCase(toyName))
-                .findFirst()
-                .orElse(null);
+    // сортування іграшок у кімнаті
+    // за ціною (зростання)
+    public void sortRoomByPrice() {
+        if (activeRoom != null) {
+            activeRoom.getToys().sort(Comparator.comparingDouble(Toy::getPrice));
+        }
+    }
 
-        if (toyToRemove != null) {
-            gameRoom.getToys().remove(toyToRemove);
-            gameRoom.decreaseSpent(toyToRemove.getPrice());
+    ////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // за розміром (Small -> Large)
+    public void sortRoomBySize() {
+        if (activeRoom != null) {
+            activeRoom.getToys().sort(Comparator.comparing(Toy::getSize));
+        }
+    }
+
+    // збереження
+    public void saveCurrentRoom(String filename) {
+        if (activeRoom != null) {
+            repository.saveRoom(activeRoom, filename);
+        }
+    }
+
+    public boolean loadRoomFromFile(String filename) {
+        GameRoom loadedRoom = repository.loadRoom(filename);
+        if (loadedRoom != null) {
+            this.activeRoom = loadedRoom;
             return true;
         }
         return false;
     }
 
-    /**
-     * Сортування всіх іграшок за ЦІНОЮ (зростання).
-     */
-    public void sortByPrice() {
-        gameRoom.getToys().sort(Comparator.comparingDouble(Toy::getPrice));
+    public Toy removeToyFromRoom(int index) {
+        if (activeRoom != null) {
+            Toy toyToRemove = activeRoom.getToys().get(index);
+            activeRoom.getToys().remove(index);
+            // повертаємо гроші в бюджет
+            activeRoom.decreaseSpent(toyToRemove.getPrice());
+            return toyToRemove;
+        }
+        return null;
     }
 
-    /**
-     * Сортування всіх іграшок за РОЗМІРОМ (Small -> Medium -> Large).
-     * Працює завдяки порядку в Enum Size.
-     */
-    public void sortBySize() {
-        gameRoom.getToys().sort(Comparator.comparing(Toy::getSize));
+    public void showTransportsBySpeed() {
+        activeRoom.getToys().stream()
+                .filter(t -> t instanceof model.Transport)
+                .map(t -> (model.Transport) t)
+                .sorted((t1, t2) -> Integer.compare(t2.getMaxSpeed(), t1.getMaxSpeed()))
+                .forEach(t -> System.out.println(t.getName() + " - " + t.getMaxSpeed() + " км/год"));
     }
 
-    /**
-     * Специфічне сортування: Тільки Транспорт за Швидкістю.
-     * Повертає окремий відсортований список, не змінюючи основний порядок кімнати.
-     */
-    public List<Transport> getTransportsSortedBySpeed() {
-        return gameRoom.getToys().stream()
-                .filter(t -> t instanceof Transport) // Відбираємо тільки транспорт
-                .map(t -> (Transport) t)             // Перетворюємо Toy на Transport
-                .sorted(Comparator.comparingInt(Transport::getMaxSpeed).reversed()) // Від швидших до повільних
+    public void showDollsByHairColor() {
+        if (activeRoom == null) return;
+
+        System.out.println("--- ЛЯЛЬКИ (Сортування за кольором волосся) ---");
+
+        activeRoom.getToys().stream()
+                .filter(t -> t instanceof Doll) // Беремо тільки ляльок
+                .map(t -> (Doll) t)             // Перетворюємо на Doll, щоб бачити метод getHairColor
+                .sorted((d1, d2) -> d1.getHairColor().compareTo(d2.getHairColor())) // Сортуємо рядки (A-Z)
+                .forEach(d -> System.out.println(d.getName() + " - Волосся: " + d.getHairColor()));
+    }
+
+    public void updateToyPrice(Toy toy, double newPrice) throws Exception {
+        double oldPrice = toy.getPrice();
+        double difference = newPrice - oldPrice;
+
+        if (difference > 0 && activeRoom.getRemainingBudget() < difference) {
+            throw new Exception("Не вистачає бюджету для збільшення ціни!");
+        }
+
+        activeRoom.increaseSpent(difference);
+        toy.setPrice(newPrice);
+    }
+
+    public List<Toy> findToysByRange(double minPrice, double maxPrice, int age) {
+        if (activeRoom == null) return List.of();
+
+        return activeRoom.getToys().stream()
+                .filter(t -> t.getPrice() >= minPrice && t.getPrice() <= maxPrice)
+                .filter(t -> age >= t.getMinAge() && age <= t.getMaxAge())
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Пошук іграшок за діапазоном параметрів (Ціна + Вікова група).
-     */
-    public List<Toy> findToys(double maxPrice, int minAge, int maxAge) {
-        return gameRoom.getToys().stream()
-                .filter(t -> t.getPrice() <= maxPrice)
-                .filter(t -> t.getMinAge() >= minAge && t.getMaxAge() <= maxAge)
-                .collect(Collectors.toList());
-    }
+    public void showWholeCatalog() {
+        if (catalog == null || catalog.isEmpty()) {
+            System.out.println("Каталог порожній або файл не завантажено.");
+            return;
+        }
 
-    /**
-     * Отримати загальну статистику.
-     */
-    public String getStatistics() {
-        long transportCount = gameRoom.getToys().stream().filter(t -> t instanceof Transport).count();
-        long legoCount = gameRoom.getToys().stream().filter(t -> t instanceof Lego).count();
+        System.out.println("\n========================================");
+        System.out.println(" ВЕСЬ КАТАЛОГ МАГАЗИНУ (" + catalog.size() + " позицій)");
+        System.out.println("========================================");
 
-        return String.format("Всього іграшок: %d (Транспорт: %d, Lego: %d). Витрачено: %.2f / %.2f",
-                gameRoom.getToys().size(), transportCount, legoCount,
-                gameRoom.getCurrentSpent(), gameRoom.getBudgetLimit());
+        var groupedCatalog = catalog.stream()
+                .collect(Collectors.groupingBy(toy -> {
+                    if (toy instanceof model.Transport) return "ТРАНСПОРТ";
+                    if (toy instanceof model.Lego) return "LEGO";
+                    if (toy instanceof model.Doll) return "ЛЯЛЬКИ";
+                    return "ІНШЕ";
+                }));
+
+        // Виводимо групи
+        for (var entry : groupedCatalog.entrySet()) {
+            System.out.println("\n" + entry.getKey() + ":");
+            System.out.println("----------------------------------------");
+            List<Toy> toys = entry.getValue();
+
+            for (Toy t : toys) {
+                System.out.printf("  • %-25s | %8.2f грн | %d-%d років | %s\n",
+                        t.getName(), t.getPrice(), t.getMinAge(), t.getMaxAge(), t.getSize());
+            }
+        }
+        System.out.println("\n========================================");
     }
 }
