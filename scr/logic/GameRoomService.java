@@ -61,6 +61,7 @@ public class GameRoomService {
         if (activeRoom != null) {
             repository.saveRoom(activeRoom, filename);
         }
+        System.out.println("Кімнату успішно збережено");
     }
 
     public boolean loadRoomFromFile(String filename) {

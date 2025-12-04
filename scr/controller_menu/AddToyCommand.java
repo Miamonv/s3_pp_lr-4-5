@@ -2,6 +2,7 @@ package controller_menu;
 
 import logic.GameRoomService;
 import model.Toy;
+
 import java.util.List;
 import java.util.Scanner;
 
@@ -18,7 +19,7 @@ public class AddToyCommand implements Command {
     public void execute() {
         if (service.getActiveRoom() == null) {
             System.out.println("Спочатку створіть кімнату!");
-            return;    ///////////// зробити щоб на іншу команду переходило
+            return;
         }
 
         System.out.println("\n--- Додавання іграшки ---");

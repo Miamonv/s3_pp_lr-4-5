@@ -56,6 +56,6 @@ public class ToyMapper {
             return String.format("Doll, %s, %s, %s", baseInfo, d.getMaterial(), d.getHairColor());
         }
 
-        return ""; // Якщо тип невідомий
+        return "";
     }
 }

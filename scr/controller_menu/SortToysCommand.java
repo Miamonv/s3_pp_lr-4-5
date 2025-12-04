@@ -43,6 +43,7 @@ public class SortToysCommand implements Command {
                 service.showTransportsBySpeed();
                 return;
             case "4":
+                System.out.println("ЛЯЛЬКИ (Сортування за кольором волоссям)");
                 service.showDollsByHairColor();
                 return;
             case "0":
